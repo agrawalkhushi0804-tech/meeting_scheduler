@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Confirmed | अक्षर पाऊल</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #1E73BE;
+            --primary-purple: #6A1B9A;
+            --accent-pink: #E91E63;
+            --success-green: #2ecc71;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', 'Noto Sans Devanagari', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        /* --- Floating Particles (Consistent with other pages) --- */
+        .circles {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden; z-index: 1;
+        }
+
+        .circles li {
+            position: absolute; display: block; list-style: none;
+            width: 20px; height: 20px; background: rgba(255, 255, 255, 0.15);
+            animation: animate 25s linear infinite; bottom: -150px; border-radius: 50%;
+        }
+
+        .circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+        .circles li:nth-child(2){ left: 10%; width: 30px; height: 30px; animation-delay: 2s; animation-duration: 12s; }
+        .circles li:nth-child(3){ left: 70%; width: 25px; height: 25px; animation-delay: 4s; }
+
+        @keyframes animate {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 20%; }
+            100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+        }
+
+        /* --- Success Card --- */
+        .success-card {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Success Icon Animation --- */
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success-green);
+            font-size: 35px;
+            line-height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 25px;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(46, 204, 113, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        }
+
+        .ngo-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary-purple);
+            margin-bottom: 10px;
+        }
+
+        .success-msg {
+            color: #64748b;
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* --- Meeting Details Box --- */
+        .details-box {
+            background: #f8fafc;
+            border-radius: 18px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 30px;
+            border: 1px solid #edf2f7;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .detail-item:last-child { margin-bottom: 0; }
+
+        .label { font-weight: 700; color: #64748b; }
+        .value { font-weight: 600; color: #1e293b; }
+
+        /* --- Buttons --- */
+        .btn-join {
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-purple));
+            color: white;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-join:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(30, 115, 190, 0.2);
+            color: white;
+        }
+
+        .btn-back {
+            color: #718096;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            transition: color 0.3s;
+        }
+
+        .btn-back:hover {
+            color: var(--primary-blue);
+        }
+    </style>
+</head>
+<body>
+
+<ul class="circles">
+    <li></li><li></li><li></li><li></li>
+</ul>
+
+<div class="success-card">
+    <div class="icon-circle">✓</div>
+
+    <div class="ngo-title">Meeting Confirmed</div>
+    <p class="success-msg">Your appointment with <strong>अक्षर पाऊल</strong> has been successfully scheduled.</p>
+
+    <div class="details-box">
+        <div class="detail-item">
+            <span class="label">Attendee:</span>
+            <span class="value">{{ name }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="label">Date:</span>
+            <span class="value">{{ date }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="label">Time:</span>
+            <span class="value">{{ time }}</span>
+        </div>
+    </div>
+
+    <a href="{{ meet_link }}" target="_blank" class="btn-join">
+        Join Google Meet
+    </a>
+
+    <div class="mt-2">
+        <a href="/" class="btn-back">← Back to Homepage</a>
+    </div>
+</div>
+
+</body>
+</html>
