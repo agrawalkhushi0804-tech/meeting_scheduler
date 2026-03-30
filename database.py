@@ -1,8 +1,14 @@
 import sqlite3
 
+DB_NAME = "database.db"
+
+
+def get_connection():
+    return sqlite3.connect(DB_NAME)
+
 
 def init_db():
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -21,7 +27,7 @@ def init_db():
 
 
 def save_meeting(name, email, date, time, meet_link):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
@@ -34,27 +40,25 @@ def save_meeting(name, email, date, time, meet_link):
 
 
 def get_all_meetings():
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM meetings")
-    meetings = cursor.fetchall()
+    data = cursor.fetchall()
 
     conn.close()
-    return meetings
+    return data
 
 
 def is_slot_available(date, time):
-    conn = sqlite3.connect("database.db")
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT * FROM meetings
-    WHERE date = ? AND time = ?
+    SELECT * FROM meetings WHERE date=? AND time=?
     """, (date, time))
 
     result = cursor.fetchone()
-
     conn.close()
 
     return result is None
