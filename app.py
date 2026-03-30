@@ -40,17 +40,17 @@ def book():
     if not is_slot_available(date, time):
         return "This time slot is already booked. Please choose another time."
 
-    # ✅ TEMP FIX (Google Meet disabled for deployment)
+    # ✅ TEMP Google Meet link (safe for deployment)
     meet_link = "https://meet.google.com/test-link"
 
     # Save to database
     save_meeting(name, email, date, time, meet_link)
 
-    # Send confirmation email
+    # ✅ SAFE EMAIL (will not crash app)
     try:
         send_confirmation_email(email, name, date, time, meet_link)
     except Exception as e:
-        print("Error sending email:", e)
+        print("Email failed:", e)
 
     return render_template("success.html",
                            name=name,
@@ -105,5 +105,4 @@ def logout():
 # =========================
 if __name__ == "__main__":
     app.run(debug=True)
-
 
