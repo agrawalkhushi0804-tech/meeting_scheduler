@@ -13,10 +13,17 @@ app.secret_key = os.getenv("SECRET_KEY", "fallback_secret")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
+
 # =========================
-# INIT DATABASE
+# INIT DATABASE (SAFE FOR RENDER)
 # =========================
-init_db()
+@app.before_first_request
+def setup():
+    try:
+        init_db()
+        print("Database initialized successfully")
+    except Exception as e:
+        print("DB INIT ERROR:", e)
 
 
 # =========================
@@ -33,26 +40,31 @@ def home():
 @app.route('/book', methods=['POST'])
 def book():
     try:
-        name = request.form['name']
-        email = request.form['email']
-        date = request.form['date']
-        time = request.form['time']
+        # Safe form handling
+        name = request.form.get('name')
+        email = request.form.get('email')
+        date = request.form.get('date')
+        time = request.form.get('time')
+
+        # Validate input
+        if not name or not email or not date or not time:
+            return "ERROR: Missing form data"
 
         # Check slot availability
         if not is_slot_available(date, time):
-            return "This time slot is already booked. Please choose another time."
+            return "This time slot is already booked."
 
-        # TEMP meet link (safe for deployment)
+        # TEMP meet link
         meet_link = "https://meet.google.com/test-link"
 
-        # Save to DB
+        # Save to database
         save_meeting(name, email, date, time, meet_link)
 
-        # Send email safely (no crash)
+        # Send email safely
         try:
             send_confirmation_email(email, name, date, time, meet_link)
         except Exception as e:
-            print("Email failed:", e)
+            print("Email error:", e)
 
         return render_template("success.html",
                                name=name,
@@ -61,7 +73,6 @@ def book():
                                meet_link=meet_link)
 
     except Exception as e:
-        # IMPORTANT: shows real error instead of crashing
         return f"ERROR OCCURRED: {str(e)}"
 
 
@@ -72,8 +83,8 @@ def book():
 def login():
 
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
 
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session['admin_logged_in'] = True
