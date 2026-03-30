@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request
 from database import init_db, save_meeting, is_slot_available
+from email_service import send_confirmation_email
+import threading
 
 app = Flask(__name__)
 
@@ -15,6 +17,14 @@ def home():
     return render_template("booking.html")
 
 
+# 🔥 BACKGROUND EMAIL FUNCTION
+def send_email_background(email, name, date, time, meet_link):
+    try:
+        send_confirmation_email(email, name, date, time, meet_link)
+    except Exception as e:
+        print("EMAIL ERROR:", e)
+
+
 @app.route('/book', methods=['POST'])
 def book():
     try:
@@ -26,9 +36,15 @@ def book():
         if not is_slot_available(date, time):
             return "Slot already booked"
 
-        meet_link = "https://meet.google.com/test-link"
+        meet_link = "https://meet.google.com/your-real-link"
 
         save_meeting(name, email, date, time, meet_link)
+
+        # 🔥 SEND EMAIL IN BACKGROUND (NO CRASH)
+        threading.Thread(
+            target=send_email_background,
+            args=(email, name, date, time, meet_link)
+        ).start()
 
         return render_template("success.html",
                                name=name,
@@ -44,5 +60,3 @@ if __name__ == "__main__":
     app.run(debug=True)
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
