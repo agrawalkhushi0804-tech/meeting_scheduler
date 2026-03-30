@@ -5,11 +5,8 @@ import threading
 
 app = Flask(__name__)
 
-# Init DB
-try:
-    init_db()
-except Exception as e:
-    print("DB ERROR:", e)
+# Initialize DB
+init_db()
 
 
 @app.route('/')
@@ -17,7 +14,7 @@ def home():
     return render_template("booking.html")
 
 
-# 🔥 BACKGROUND EMAIL FUNCTION
+# 🔥 Background email sender
 def send_email_background(email, name, date, time, meet_link):
     try:
         send_confirmation_email(email, name, date, time, meet_link)
@@ -33,24 +30,29 @@ def book():
         date = request.form.get('date')
         time = request.form.get('time')
 
+        # Check slot
         if not is_slot_available(date, time):
-            return "Slot already booked"
+            return "This time slot is already booked"
 
-        meet_link = "https://meet.google.com/your-real-link"
+        # 🔗 Meeting link (replace with real if needed)
+        meet_link = "https://meet.google.com/your-link"
 
+        # Save to DB
         save_meeting(name, email, date, time, meet_link)
 
-        # 🔥 SEND EMAIL IN BACKGROUND (NO CRASH)
+        # 🔥 Send email in background
         threading.Thread(
             target=send_email_background,
             args=(email, name, date, time, meet_link)
         ).start()
 
-        return render_template("success.html",
-                               name=name,
-                               date=date,
-                               time=time,
-                               meet_link=meet_link)
+        return render_template(
+            "success.html",
+            name=name,
+            date=date,
+            time=time,
+            meet_link=meet_link
+        )
 
     except Exception as e:
         return f"ERROR: {str(e)}"
