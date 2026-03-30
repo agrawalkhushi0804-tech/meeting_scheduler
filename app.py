@@ -36,36 +36,29 @@ def home():
 # =========================
 @app.route('/book', methods=['POST'])
 def book():
+    name = request.form.get('name')
+    email = request.form.get('email')
+    date = request.form.get('date')
+    time = request.form.get('time')
+
+    print("FORM DATA:", name, email, date, time)
+
     try:
-        name = request.form.get('name')
-        email = request.form.get('email')
-        date = request.form.get('date')
-        time = request.form.get('time')
-
-        if not name or not email or not date or not time:
-            return "ERROR: Missing form data"
-
         if not is_slot_available(date, time):
             return "Slot already booked"
 
         meet_link = "https://meet.google.com/test-link"
 
+        print("Saving to DB...")
         save_meeting(name, email, date, time, meet_link)
 
-        try:
-            send_confirmation_email(email, name, date, time, meet_link)
-        except Exception as e:
-            print("Email error:", e)
+        print("Sending email...")
+        send_confirmation_email(email, name, date, time, meet_link)
 
-        return render_template("success.html",
-                               name=name,
-                               date=date,
-                               time=time,
-                               meet_link=meet_link)
+        return "SUCCESS"
 
     except Exception as e:
-        return f"ERROR OCCURRED: {str(e)}"
-
+        return f"REAL ERROR: {str(e)}"
 
 # =========================
 # LOGIN ROUTE
