@@ -13,7 +13,9 @@ app.secret_key = os.getenv("SECRET_KEY", "fallback_secret")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-# Initialize database
+# =========================
+# INIT DATABASE
+# =========================
 init_db()
 
 
@@ -30,33 +32,37 @@ def home():
 # =========================
 @app.route('/book', methods=['POST'])
 def book():
-
-    name = request.form['name']
-    email = request.form['email']
-    date = request.form['date']
-    time = request.form['time']
-
-    # 🔐 Check slot availability
-    if not is_slot_available(date, time):
-        return "This time slot is already booked. Please choose another time."
-
-    # ✅ TEMP Google Meet link (safe for deployment)
-    meet_link = "https://meet.google.com/test-link"
-
-    # Save to database
-    save_meeting(name, email, date, time, meet_link)
-
-    # ✅ SAFE EMAIL (will not crash app)
     try:
-        send_confirmation_email(email, name, date, time, meet_link)
-    except Exception as e:
-        print("Email failed:", e)
+        name = request.form['name']
+        email = request.form['email']
+        date = request.form['date']
+        time = request.form['time']
 
-    return render_template("success.html",
-                           name=name,
-                           date=date,
-                           time=time,
-                           meet_link=meet_link)
+        # Check slot availability
+        if not is_slot_available(date, time):
+            return "This time slot is already booked. Please choose another time."
+
+        # TEMP meet link (safe for deployment)
+        meet_link = "https://meet.google.com/test-link"
+
+        # Save to DB
+        save_meeting(name, email, date, time, meet_link)
+
+        # Send email safely (no crash)
+        try:
+            send_confirmation_email(email, name, date, time, meet_link)
+        except Exception as e:
+            print("Email failed:", e)
+
+        return render_template("success.html",
+                               name=name,
+                               date=date,
+                               time=time,
+                               meet_link=meet_link)
+
+    except Exception as e:
+        # IMPORTANT: shows real error instead of crashing
+        return f"ERROR OCCURRED: {str(e)}"
 
 
 # =========================
