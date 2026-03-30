@@ -1,10 +1,11 @@
 from flask import Flask, render_template, request
 from database import init_db, save_meeting, is_slot_available
+from email_service import send_confirmation_email
 import traceback
 
 app = Flask(__name__)
 
-# Initialize DB safely
+# Initialize DB
 try:
     init_db()
 except Exception as e:
@@ -29,11 +30,19 @@ def book():
 
         meet_link = "https://meet.google.com/test-link"
 
+        # Save in DB
         save_meeting(name, email, date, time, meet_link)
+
+        # 🔥 SAFE EMAIL (no crash)
+        try:
+            send_confirmation_email(email, name, date, time, meet_link)
+        except Exception as e:
+            print("EMAIL ERROR:", e)
 
         return f"""
         <h2>SUCCESS ✅</h2>
-        <p>Saved in Database</p>
+        <p>Meeting Booked Successfully</p>
+        <p>Email sent (if configured correctly)</p>
         """
 
     except Exception as e:
@@ -42,4 +51,3 @@ def book():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
