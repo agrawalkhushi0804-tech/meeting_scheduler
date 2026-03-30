@@ -13,17 +13,14 @@ app.secret_key = os.getenv("SECRET_KEY", "fallback_secret")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
-
 # =========================
-# INIT DATABASE (SAFE FOR RENDER)
+# SAFE DATABASE INIT
 # =========================
-@app.before_first_request
-def setup():
-    try:
-        init_db()
-        print("Database initialized successfully")
-    except Exception as e:
-        print("DB INIT ERROR:", e)
+try:
+    init_db()
+    print("Database initialized")
+except Exception as e:
+    print("DB ERROR:", e)
 
 
 # =========================
@@ -40,27 +37,21 @@ def home():
 @app.route('/book', methods=['POST'])
 def book():
     try:
-        # Safe form handling
         name = request.form.get('name')
         email = request.form.get('email')
         date = request.form.get('date')
         time = request.form.get('time')
 
-        # Validate input
         if not name or not email or not date or not time:
             return "ERROR: Missing form data"
 
-        # Check slot availability
         if not is_slot_available(date, time):
-            return "This time slot is already booked."
+            return "Slot already booked"
 
-        # TEMP meet link
         meet_link = "https://meet.google.com/test-link"
 
-        # Save to database
         save_meeting(name, email, date, time, meet_link)
 
-        # Send email safely
         try:
             send_confirmation_email(email, name, date, time, meet_link)
         except Exception as e:
