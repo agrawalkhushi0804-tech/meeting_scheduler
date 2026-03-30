@@ -1,55 +1,45 @@
 from flask import Flask, render_template, request
+from database import init_db, save_meeting, is_slot_available
 import traceback
 
 app = Flask(__name__)
 
+# Initialize DB safely
+try:
+    init_db()
+except Exception as e:
+    print("DB INIT ERROR:", e)
 
-# =========================
-# HOME PAGE
-# =========================
+
 @app.route('/')
 def home():
-    try:
-        return render_template("booking.html")
-    except Exception as e:
-        return f"HOME ERROR: {str(e)}"
+    return render_template("booking.html")
 
 
-# =========================
-# BOOK ROUTE (FULL DEBUG)
-# =========================
 @app.route('/book', methods=['POST'])
 def book():
     try:
-        print("---- BOOK ROUTE HIT ----")
-
         name = request.form.get('name')
         email = request.form.get('email')
         date = request.form.get('date')
         time = request.form.get('time')
 
-        print("FORM DATA:", name, email, date, time)
+        if not is_slot_available(date, time):
+            return "Slot already booked"
 
-        # Simple return (NO DB, NO EMAIL)
+        meet_link = "https://meet.google.com/test-link"
+
+        save_meeting(name, email, date, time, meet_link)
+
         return f"""
         <h2>SUCCESS ✅</h2>
-        <p>Name: {name}</p>
-        <p>Email: {email}</p>
-        <p>Date: {date}</p>
-        <p>Time: {time}</p>
+        <p>Saved in Database</p>
         """
 
     except Exception as e:
-        error_trace = traceback.format_exc()
-        return f"""
-        <h2>ERROR ❌</h2>
-        <pre>{error_trace}</pre>
-        """
+        return f"<pre>{traceback.format_exc()}</pre>"
 
 
-# =========================
-# RUN APP
-# =========================
 if __name__ == "__main__":
     app.run(debug=True)
 
