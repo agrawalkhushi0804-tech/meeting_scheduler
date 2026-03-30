@@ -1,28 +1,62 @@
-import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from flask import Flask, render_template, request
+from database import init_db, save_meeting, is_slot_available
+from email_service import send_confirmation_email
+import threading
+
+app = Flask(__name__)
+
+# Initialize DB
+init_db()
 
 
-def send_confirmation_email(receiver_email, name, date, time, meet_link):
+@app.route('/')
+def home():
+    return render_template("booking.html")
+
+
+# 🔥 Background email sender
+def send_email_background(email, name, date, time, meet_link):
     try:
-        sg = SendGridAPIClient(os.getenv("SENDGRID_API_KEY"))
+        send_confirmation_email(email, name, date, time, meet_link)
+    except Exception as e:
+        print("EMAIL ERROR:", e)
 
-        message = Mail(
-            from_email='agrawalkhushi0804@gmail.com',
-            to_emails=receiver_email,
-            subject='Meeting Confirmation | Akshar Paaul',
-            html_content=f"""
-            <h2>Meeting Confirmed</h2>
-            <p>Hello {name},</p>
-            <p>Your meeting is scheduled.</p>
-            <p><b>Date:</b> {date}</p>
-            <p><b>Time:</b> {time}</p>
-            <p><a href="{meet_link}">Join Meeting</a></p>
-            """
+
+@app.route('/book', methods=['POST'])
+def book():
+    try:
+        name = request.form.get('name')
+        email = request.form.get('email')
+        date = request.form.get('date')
+        time = request.form.get('time')
+
+        # Check slot
+        if not is_slot_available(date, time):
+            return "This time slot is already booked"
+
+        # 🔗 Meeting link (replace with real if needed)
+        meet_link = "https://meet.google.com/your-link"
+
+        # Save to DB
+        save_meeting(name, email, date, time, meet_link)
+
+        # 🔥 Send email in background
+        threading.Thread(
+            target=send_email_background,
+            args=(email, name, date, time, meet_link)
+        ).start()
+
+        return render_template(
+            "success.html",
+            name=name,
+            date=date,
+            time=time,
+            meet_link=meet_link
         )
 
-        sg.send(message)
-        print("Email sent successfully")
-
     except Exception as e:
-        print("SendGrid Error:", e)
+        return f"ERROR: {str(e)}"
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
