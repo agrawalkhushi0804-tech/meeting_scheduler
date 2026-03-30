@@ -5,7 +5,6 @@ from sendgrid.helpers.mail import Mail
 
 def send_confirmation_email(receiver_email, name, date, time, meet_link):
     try:
-        # Get API key from environment variable
         api_key = os.getenv("SENDGRID_API_KEY")
 
         if not api_key:
@@ -17,12 +16,17 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
         subject = "Meeting Scheduled - Akshar Paaul"
 
         html_content = f"""
-        <div style="font-family: Arial; max-width:600px; margin:auto; padding:20px;">
+        <div style="font-family: Arial; max-width:600px; margin:auto; padding:20px; text-align:center;">
             
-            <h2 style="color:#1E73BE;">अक्षर पाऊल</h2>
+            <!-- 🔥 LOGO -->
+            <img src="https://your-logo-link.png" width="100" style="margin-bottom:10px; border-radius:10px;" />
+
+            <h2 style="color:#1E73BE; margin:5px;">अक्षर पाऊल</h2>
             <p style="color:#555;">संस्कारातून साक्षरतेकडे…</p>
 
             <hr>
+
+            <div style="text-align:left;">
 
             <p>Dear {name},</p>
 
@@ -35,23 +39,25 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
 
             <p>Click below to join your meeting:</p>
 
-            <a href="{meet_link}" 
-               style="background:#1E73BE; color:white; padding:10px 15px; text-decoration:none; border-radius:5px;">
-               Join Meeting
-            </a>
-
-            <br><br>
+            <div style="text-align:center; margin:20px 0;">
+                <a href="{meet_link}" 
+                   style="background:#1E73BE; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold;">
+                   Join Meeting
+                </a>
+            </div>
 
             <p style="font-size:13px; color:gray;">
                 Regards,<br>
                 Akshar Paaul Team
             </p>
 
+            </div>
+
         </div>
         """
 
         message = Mail(
-            from_email='Akshar Paaul <agrawalkhushi0804@gmail.com>',  # must be verified in SendGrid
+            from_email='Akshar Paaul <agrawalkhushi0804@gmail.com>',
             to_emails=receiver_email,
             subject=subject,
             html_content=html_content,
