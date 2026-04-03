@@ -19,8 +19,10 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
         <div style="font-family: Arial; max-width:600px; margin:auto; padding:20px; text-align:center;">
             
             <!-- 🔥 LOGO -->
-            <img src="https://your-logo-link.png" width="100" style="margin-bottom:10px; border-radius:10px;" />
-
+           <img src="https://meeting-scheduler-o5wq.onrender.com/static/logo.png" 
+                 alt="Akshar Paaul Logo" 
+                 width="100" 
+                 style="display:block; margin:auto;">
             <h2 style="color:#1E73BE; margin:5px;">अक्षर पाऊल</h2>
             <p style="color:#555;">संस्कारातून साक्षरतेकडे…</p>
 
