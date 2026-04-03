@@ -59,9 +59,9 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
         """
 
         message = Mail(
-            from_email='Akshar Paaul <agrawalkhushi0804@gmail.com>',
+            from_email='agrawalkhushi0804@gmail.com',
             to_emails=receiver_email,
-            subject=subject,
+            subject="Your Meeting Details - Akshar Paaul",
             html_content=html_content,
             plain_text_content=f"""
 Meeting Scheduled
@@ -80,3 +80,8 @@ Join here: {meet_link}
 
     except Exception as e:
         print("❌ SendGrid Error:", e)
+<hr>
+<p style="font-size:12px; color:gray;">
+This is an automated email sent by Akshar Paaul NGO.<br>
+If you did not request this meeting, you can safely ignore this email.
+</p>
