@@ -13,22 +13,18 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
 
         sg = SendGridAPIClient(api_key)
 
-        subject = "Meeting Scheduled - Akshar Paaul"
+        subject = "Your Meeting Details - Akshar Paaul"
 
         html_content = f"""
-        <div style="font-family: Arial; max-width:600px; margin:auto; padding:20px; text-align:center;">
+        <div style="font-family: Arial; max-width:600px; margin:auto; padding:20px;">
             
-            <!-- 🔥 LOGO -->
-           <img src="https://i.postimg.cc/cJbv2bTY/logo.png" 
-                 alt="Akshar Paaul Logo" 
-                 width="100" 
-                 style="display:block; margin:auto;">
-            <h2 style="color:#1E73BE; margin:5px;">अक्षर पाऊल</h2>
-            <p style="color:#555;">संस्कारातून साक्षरतेकडे…</p>
+            <div style="text-align:center;">
+                <img src="https://i.postimg.cc/YOUR-LINK/logo.png" width="100" alt="Akshar Paaul Logo">
+                <h2 style="color:#1E73BE;">अक्षर पाऊल</h2>
+                <p style="color:#555;">संस्कारातून साक्षरतेकडे…</p>
+            </div>
 
             <hr>
-
-            <div style="text-align:left;">
 
             <p>Dear {name},</p>
 
@@ -39,29 +35,27 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
                 <b>Time:</b> {time}
             </p>
 
-            <p>Click below to join your meeting:</p>
+            <p>You can join your meeting using the link below:</p>
 
-            <div style="text-align:center; margin:20px 0;">
-                <a href="{meet_link}" 
-                   style="background:#1E73BE; color:white; padding:12px 20px; text-decoration:none; border-radius:6px; font-weight:bold;">
-                   Join Meeting
-                </a>
-            </div>
-
-            <p style="font-size:13px; color:gray;">
-                Regards,<br>
-                Akshar Paaul Team
+            <p>
+                <a href="{meet_link}">{meet_link}</a>
             </p>
 
-            </div>
+            <br>
+
+            <hr>
+            <p style="font-size:12px; color:gray;">
+                This is an automated email sent by Akshar Paaul NGO.<br>
+                If you did not request this meeting, you can safely ignore this email.
+            </p>
 
         </div>
         """
 
         message = Mail(
-            from_email='agrawalkhushi0804@gmail.com',
+            from_email='agrawalkhushi0804@gmail.com',  # cleaner sender
             to_emails=receiver_email,
-            subject="Your Meeting Details - Akshar Paaul",
+            subject=subject,
             html_content=html_content,
             plain_text_content=f"""
 Meeting Scheduled
@@ -80,8 +74,3 @@ Join here: {meet_link}
 
     except Exception as e:
         print("❌ SendGrid Error:", e)
-<hr>
-<p style="font-size:12px; color:gray;">
-This is an automated email sent by Akshar Paaul NGO.<br>
-If you did not request this meeting, you can safely ignore this email.
-</p>
