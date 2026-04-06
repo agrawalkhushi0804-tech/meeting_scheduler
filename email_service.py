@@ -53,7 +53,7 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
         """
 
         message = Mail(
-            from_email='agrawalkhushi0804@gmail.com',  # cleaner sender
+            from_email='infoaksharpaaul@gmail.com',  # cleaner sender
             to_emails=receiver_email,
             subject=subject,
             html_content=html_content,
