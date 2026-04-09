@@ -1,12 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from database import init_db, save_meeting, get_all_meetings, is_slot_available
 from email_service import send_confirmation_email
-import threading
 
 app = Flask(__name__)
 app.secret_key = "super_secret_key_change_this"
 
-# Initialize DB
+# Initialize database
 init_db()
 
 
@@ -19,35 +18,38 @@ def home():
 
 
 # =========================
-# BOOK MEETING
+# BOOK MEETING (FIXED)
 # =========================
 @app.route('/book', methods=['POST'])
 def book():
     try:
+        # 🔹 STEP 1: Get data
         name = request.form.get('name')
         email = request.form.get('email')
         date = request.form.get('date')
         time = request.form.get('time')
 
-        # Check availability
+        print("STEP 1: Data received")
+        print(name, email, date, time)
+
+        # 🔹 STEP 2: Check slot
         if not is_slot_available(date, time):
+            print("Slot already booked")
             return "This slot is already booked"
 
-        # Temporary Meet link (stable for deployment)
+        # 🔹 STEP 3: Create meet link (temporary)
         meet_link = "https://meet.google.com/new"
 
-        # Save in DB
+        # 🔹 STEP 4: Save to DB
+        print("STEP 2: Saving meeting")
         save_meeting(name, email, date, time, meet_link)
 
-        # 🔥 DEBUG
-        print("Calling email function...")
+        # 🔹 STEP 5: Send email
+        print("STEP 3: Calling email function")
+        send_confirmation_email(email, name, date, time, meet_link)
+        print("STEP 4: Email function DONE")
 
-        # Send email in background (IMPORTANT)
-        threading.Thread(
-            target=send_confirmation_email,
-            args=(email, name, date, time, meet_link)
-        ).start()
-
+        # 🔹 STEP 6: Show success page
         return render_template("success.html",
                                name=name,
                                date=date,
@@ -55,7 +57,7 @@ def book():
                                meet_link=meet_link)
 
     except Exception as e:
-        print("ERROR:", e)
+        print("❌ ERROR IN /book:", str(e))
         return "Something went wrong. Please try again."
 
 
@@ -104,7 +106,7 @@ def logout():
 # RUN APP
 # =========================
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
 
 
 
