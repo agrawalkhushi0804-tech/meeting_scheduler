@@ -1,16 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, session
-from database import init_db, save_meeting, get_all_meetings, is_slot_available
+from database import init_db, save_meeting, get_all_meetings, is_slot_available, clear_all_meetings
+from calendar_service import get_calendar_service, create_google_meet
 from email_service import send_confirmation_email
+import os
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key_change_this"
+app.secret_key = os.getenv("SECRET_KEY", "fallback_secret")
 
-# Initialize database
 init_db()
 
-
 # =========================
-# HOME PAGE
+# HOME
 # =========================
 @app.route('/')
 def home():
@@ -18,47 +18,33 @@ def home():
 
 
 # =========================
-# BOOK MEETING (FIXED)
+# BOOK MEETING
 # =========================
 @app.route('/book', methods=['POST'])
 def book():
+    name = request.form['name']
+    email = request.form['email']
+    date = request.form['date']
+    time = request.form['time']
+
+    if not is_slot_available(date, time):
+        return "Slot already booked!"
+
+    service = get_calendar_service()
+    meet_link = create_google_meet(service, name, date, time)
+
+    save_meeting(name, email, date, time, meet_link)
+
     try:
-        # 🔹 STEP 1: Get data
-        name = request.form.get('name')
-        email = request.form.get('email')
-        date = request.form.get('date')
-        time = request.form.get('time')
-
-        print("STEP 1: Data received")
-        print(name, email, date, time)
-
-        # 🔹 STEP 2: Check slot
-        if not is_slot_available(date, time):
-            print("Slot already booked")
-            return "This slot is already booked"
-
-        # 🔹 STEP 3: Create meet link (temporary)
-        meet_link = "https://meet.google.com/new"
-
-        # 🔹 STEP 4: Save to DB
-        print("STEP 2: Saving meeting")
-        save_meeting(name, email, date, time, meet_link)
-
-        # 🔹 STEP 5: Send email
-        print("STEP 3: Calling email function")
         send_confirmation_email(email, name, date, time, meet_link)
-        print("STEP 4: Email function DONE")
-
-        # 🔹 STEP 6: Show success page
-        return render_template("success.html",
-                               name=name,
-                               date=date,
-                               time=time,
-                               meet_link=meet_link)
-
     except Exception as e:
-        print("❌ ERROR IN /book:", str(e))
-        return "Something went wrong. Please try again."
+        print("Email Error:", e)
+
+    return render_template("success.html",
+                           name=name,
+                           date=date,
+                           time=time,
+                           meet_link=meet_link)
 
 
 # =========================
@@ -66,16 +52,15 @@ def book():
 # =========================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+        username = request.form['username']
+        password = request.form['password']
 
-        if username == "admin" and password == "admin123":
+        if username == os.getenv("ADMIN_USERNAME", "admin") and password == os.getenv("ADMIN_PASSWORD", "admin123"):
             session['admin_logged_in'] = True
             return redirect(url_for('admin'))
         else:
-            return "Invalid Credentials"
+            return "Invalid credentials"
 
     return render_template("login.html")
 
@@ -85,12 +70,23 @@ def login():
 # =========================
 @app.route('/admin')
 def admin():
-
     if not session.get('admin_logged_in'):
         return redirect(url_for('login'))
 
     meetings = get_all_meetings()
     return render_template("admin.html", meetings=meetings)
+
+
+# =========================
+# 🔥 CLEAR ALL MEETINGS
+# =========================
+@app.route('/clear')
+def clear():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+
+    clear_all_meetings()
+    return "✅ All meetings cleared successfully!"
 
 
 # =========================
@@ -103,7 +99,7 @@ def logout():
 
 
 # =========================
-# RUN APP
+# RUN
 # =========================
 if __name__ == "__main__":
     app.run(debug=True)
