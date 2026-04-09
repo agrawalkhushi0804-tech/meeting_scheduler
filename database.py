@@ -1,25 +1,18 @@
 import sqlite3
 
-DB_NAME = "database.db"
-
-
-def get_connection():
-    return sqlite3.connect(DB_NAME)
-
-
 def init_db():
-    conn = get_connection()
+    conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS meetings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        email TEXT,
-        date TEXT,
-        time TEXT,
-        meet_link TEXT
-    )
+        CREATE TABLE IF NOT EXISTS meetings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            email TEXT,
+            date TEXT,
+            time TEXT,
+            meet_link TEXT
+        )
     """)
 
     conn.commit()
@@ -27,12 +20,12 @@ def init_db():
 
 
 def save_meeting(name, email, date, time, meet_link):
-    conn = get_connection()
+    conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute("""
-    INSERT INTO meetings (name, email, date, time, meet_link)
-    VALUES (?, ?, ?, ?, ?)
+        INSERT INTO meetings (name, email, date, time, meet_link)
+        VALUES (?, ?, ?, ?, ?)
     """, (name, email, date, time, meet_link))
 
     conn.commit()
@@ -40,25 +33,36 @@ def save_meeting(name, email, date, time, meet_link):
 
 
 def get_all_meetings():
-    conn = get_connection()
+    conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM meetings")
-    data = cursor.fetchall()
+    meetings = cursor.fetchall()
 
     conn.close()
-    return data
+    return meetings
 
 
 def is_slot_available(date, time):
-    conn = get_connection()
+    conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
     cursor.execute("""
-    SELECT * FROM meetings WHERE date=? AND time=?
+        SELECT * FROM meetings WHERE date=? AND time=?
     """, (date, time))
 
     result = cursor.fetchone()
     conn.close()
 
     return result is None
+
+
+# ✅ NEW FUNCTION (IMPORTANT)
+def clear_all_meetings():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM meetings")
+
+    conn.commit()
+    conn.close()
