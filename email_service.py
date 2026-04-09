@@ -12,7 +12,7 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
         day = date_obj.strftime("%A")   # Monday, Tuesday...
 
         message = Mail(
-            from_email='your_verified_ngo_email@gmail.com',
+            from_email='info.aksharpaaul@gmail.com',
             to_emails=receiver_email,
             subject='Meeting Confirmation - Akshar Paaul',
 
