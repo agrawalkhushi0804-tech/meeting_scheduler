@@ -18,7 +18,7 @@ def send_confirmation_email(receiver_email, name, date, time, meet_link):
             return
 
         message = Mail(
-            from_email='infoaksharpaaul@gmail.com',  # 👈 CHANGE THIS
+            from_email='info.aksharpaaul@gmail.com',  # 👈 CHANGE THIS
             to_emails=receiver_email,
             subject='Meeting Confirmation - Akshar Paaul',
             html_content=f"""
