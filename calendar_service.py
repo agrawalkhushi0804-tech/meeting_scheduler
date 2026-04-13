@@ -1,59 +1,62 @@
 import os
-import datetime
-import uuid
-import urllib.parse
-
+import json
+from datetime import datetime, timedelta
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
-
-# 🔹 Load credentials from environment variable
-SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_CREDENTIALS_JSON")
-
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
-credentials = service_account.Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
 
-service = build('calendar', 'v3', credentials=credentials)
-
-
-def create_meeting(name, email, date, time):
+# =========================
+# GET SERVICE
+# =========================
+def get_calendar_service():
     try:
-        print("=== GOOGLE CALENDAR FUNCTION STARTED ===")
+        # 🔥 Load JSON from environment variable
+        credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
-        # Convert date + time to datetime
-        start_datetime = datetime.datetime.strptime(
-            f"{date} {time}", "%Y-%m-%d %H:%M"
+        if not credentials_json:
+            raise Exception("GOOGLE_CREDENTIALS not found")
+
+        credentials_info = json.loads(credentials_json)
+
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_info,
+            scopes=SCOPES
         )
 
-        end_datetime = start_datetime + datetime.timedelta(hours=1)
+        service = build('calendar', 'v3', credentials=credentials)
+        return service
 
-        # Convert to ISO format
-        start_iso = start_datetime.isoformat()
-        end_iso = end_datetime.isoformat()
+    except Exception as e:
+        print("❌ ERROR LOADING GOOGLE SERVICE:", e)
+        return None
 
-        # Unique request ID
-        request_id = str(uuid.uuid4())
+
+# =========================
+# CREATE GOOGLE MEET
+# =========================
+def create_google_meet(service, name, date, time):
+    try:
+        if service is None:
+            return "Error: Calendar service not available"
+
+        start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+        end_time = start_time + timedelta(hours=1)
 
         event = {
             'summary': f'Meeting with {name}',
-            'description': 'Scheduled via Meeting Scheduler App',
             'start': {
-                'dateTime': start_iso,
+                'dateTime': start_time.isoformat(),
                 'timeZone': 'Asia/Kolkata',
             },
             'end': {
-                'dateTime': end_iso,
+                'dateTime': end_time.isoformat(),
                 'timeZone': 'Asia/Kolkata',
             },
-            'attendees': [
-                {'email': email},
-            ],
             'conferenceData': {
                 'createRequest': {
-                    'requestId': request_id,
+                    'requestId': f"{name}-{date}-{time}",
                     'conferenceSolutionKey': {
                         'type': 'hangoutsMeet'
                     }
@@ -61,34 +64,25 @@ def create_meeting(name, email, date, time):
             }
         }
 
-        # Create event
         event = service.events().insert(
             calendarId='primary',
             body=event,
             conferenceDataVersion=1
         ).execute()
 
-        print("Event created successfully")
-
-        # 🔥 GET MEET LINK
         raw_link = event['conferenceData']['entryPoints'][0]['uri']
-
-        print("Raw Meet Link:", raw_link)
 
         # 🔥 FIX REDIRECT ISSUE
         if "google.com/url?q=" in raw_link:
+            import urllib.parse
             meet_link = urllib.parse.parse_qs(
                 urllib.parse.urlparse(raw_link).query
             )['q'][0]
         else:
             meet_link = raw_link
 
-        meet_link = meet_link.strip()
-
-        print("Final Meet Link:", meet_link)
-
-        return meet_link
+        return meet_link.strip()
 
     except Exception as e:
-        print("❌ ERROR IN CALENDAR:", e)
-        return None
+        print("❌ ERROR CREATING MEETING:", e)
+        return "Error creating meeting"
