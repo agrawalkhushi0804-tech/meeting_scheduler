@@ -1,54 +1,73 @@
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from datetime import datetime, timedelta
+import os
+import requests
 
-# ✅ SCOPES
-SCOPES = ['https://www.googleapis.com/auth/calendar']
-
-# ✅ GET SERVICE
-def get_calendar_service():
-    credentials = service_account.Credentials.from_service_account_file(
-        'service_account.json',
-        scopes=SCOPES
-    )
-
-    service = build('calendar', 'v3', credentials=credentials)
-    return service
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
 
-# ✅ CREATE GOOGLE MEET LINK
-def create_google_meet(service, name, date, time):
+def send_confirmation_email(receiver_email, name, date, time, meet_link):
+    try:
+        print("=== EMAIL FUNCTION STARTED ===")
 
-    start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
-    end_time = start_time + timedelta(hours=1)
+        url = "https://api.sendgrid.com/v3/mail/send"
 
-    event = {
-        'summary': f'Meeting with {name}',
-        'start': {
-            'dateTime': start_time.isoformat(),
-            'timeZone': 'Asia/Kolkata',
-        },
-        'end': {
-            'dateTime': end_time.isoformat(),
-            'timeZone': 'Asia/Kolkata',
-        },
-        'conferenceData': {
-            'createRequest': {
-                'requestId': f"{name}-{date}-{time}",
-                'conferenceSolutionKey': {
-                    'type': 'hangoutsMeet'
-                }
-            }
+        headers = {
+            "Authorization": f"Bearer {SENDGRID_API_KEY}",
+            "Content-Type": "application/json"
         }
-    }
 
-    event = service.events().insert(
-        calendarId='primary',
-        body=event,
-        conferenceDataVersion=1
-    ).execute()
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial; background-color:#f4f4f4; padding:20px;">
+            <div style="background:white; padding:20px; border-radius:10px;">
+                
+                <h2 style="color:#6A1B9A;">Akshar Paaul</h2>
 
-    # ✅ Extract Google Meet link
-    meet_link = event['conferenceData']['entryPoints'][0]['uri']
+                <p>Dear {name},</p>
 
-    return meet_link
+                <p>Your meeting has been successfully scheduled.</p>
+
+                <p><b>Date:</b> {date}<br>
+                <b>Time:</b> {time}</p>
+
+                <p>
+                    <a href="{meet_link}" 
+                       style="background:#1E73BE; color:white; padding:10px 15px; text-decoration:none; border-radius:5px;">
+                       Join Meeting
+                    </a>
+                </p>
+
+                <p>Thank you.</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        data = {
+            "personalizations": [
+                {
+                    "to": [{"email": receiver_email}],
+                    "subject": "Meeting Confirmation - Akshar Paaul"
+                }
+            ],
+            "from": {
+                "email": "info.aksharpaaul@gmail.com"
+            },
+            "content": [
+                {
+                    "type": "text/html",
+                    "value": html_content
+                }
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=data)
+
+        print("Status Code:", response.status_code)
+
+        if response.status_code == 202:
+            print("✅ Email sent successfully")
+        else:
+            print("❌ Email failed:", response.text)
+
+    except Exception as e:
+        print("❌ EMAIL ERROR:", e)
