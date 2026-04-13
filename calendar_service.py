@@ -1,61 +1,81 @@
-from google_auth_oauthlib.flow import InstalledAppFlow
+import os
+import json
+from datetime import datetime, timedelta
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
-import datetime
 
-# Permission scope
+# ✅ Google Calendar scope
 SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
+# =========================
+# GET CALENDAR SERVICE
+# =========================
 def get_calendar_service():
-    flow = InstalledAppFlow.from_client_secrets_file(
-        'credentials.json',
-        SCOPES
-    )
-    creds = flow.run_local_server(port=0)
-    service = build('calendar', 'v3', credentials=creds)
-    return service
+    try:
+        # 🔐 Load credentials from environment variable
+        credentials_info = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
+
+        credentials = service_account.Credentials.from_service_account_info(
+            credentials_info,
+            scopes=SCOPES
+        )
+
+        service = build('calendar', 'v3', credentials=credentials)
+        return service
+
+    except Exception as e:
+        print("❌ ERROR LOADING GOOGLE CREDENTIALS:", e)
+        return None
 
 
+# =========================
+# CREATE GOOGLE MEET LINK
+# =========================
 def create_google_meet(service, name, date, time):
-    # Convert date & time into datetime object
-    start_datetime = datetime.datetime.strptime(
-        f"{date} {time}",
-        "%Y-%m-%d %H:%M"
-    )
+    try:
+        if service is None:
+            return "Error: Calendar service not available"
 
-    # Default meeting duration = 1 hour
-    end_datetime = start_datetime + datetime.timedelta(hours=1)
+        # Convert to datetime
+        start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+        end_time = start_time + timedelta(hours=1)
 
-    event = {
-        'summary': f'Meeting with {name}',
-        'start': {
-            'dateTime': start_datetime.isoformat(),
-            'timeZone': 'Asia/Kolkata',
-        },
-        'end': {
-            'dateTime': end_datetime.isoformat(),
-            'timeZone': 'Asia/Kolkata',
-        },
-        'conferenceData': {
-            'createRequest': {
-                'requestId': 'meeting_scheduler_unique'
+        # Event body
+        event = {
+            'summary': f'Meeting with {name}',
+            'start': {
+                'dateTime': start_time.isoformat(),
+                'timeZone': 'Asia/Kolkata',
+            },
+            'end': {
+                'dateTime': end_time.isoformat(),
+                'timeZone': 'Asia/Kolkata',
+            },
+            'conferenceData': {
+                'createRequest': {
+                    'requestId': f"{name}-{date}-{time}",
+                    'conferenceSolutionKey': {
+                        'type': 'hangoutsMeet'
+                    }
+                }
             }
-        },
-        'reminders': {
-            'useDefault': False,
-            'overrides': [
-                {'method': 'email', 'minutes': 60},   # Email reminder 1 hour before
-                {'method': 'popup', 'minutes': 30},   # Popup reminder 30 mins before
-            ],
         }
-    }
 
-    # Insert event into Google Calendar
-    event = service.events().insert(
-        calendarId='primary',
-        body=event,
-        conferenceDataVersion=1
-    ).execute()
+        # Create event
+        event = service.events().insert(
+            calendarId='primary',
+            body=event,
+            conferenceDataVersion=1
+        ).execute()
 
-    # Return Google Meet link
-    return event.get("hangoutLink")
+        # Extract Meet link
+        meet_link = event['conferenceData']['entryPoints'][0]['uri']
+
+        print("✅ Google Meet link created:", meet_link)
+
+        return meet_link
+
+    except Exception as e:
+        print("❌ ERROR CREATING MEETING:", e)
+        return "Error creating meeting"
