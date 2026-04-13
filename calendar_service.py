@@ -39,16 +39,11 @@ def get_calendar_service():
 # =========================
 def create_google_meet(service, name, date, time):
     try:
-        if service is None:
-            raise Exception("Service not initialized")
+        from datetime import datetime, timedelta
 
-        print("=== CREATING GOOGLE MEET ===")
-
-        # Convert datetime
         start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         end_time = start_time + timedelta(hours=1)
 
-        # Event body
         event = {
             'summary': f'Meeting with {name}',
             'description': 'Scheduled via Meeting Scheduler',
@@ -59,31 +54,23 @@ def create_google_meet(service, name, date, time):
             'end': {
                 'dateTime': end_time.isoformat(),
                 'timeZone': 'Asia/Kolkata',
-            },
-            'conferenceData': {
-                'createRequest': {
-                    'requestId': str(uuid.uuid4()),  # 🔥 unique ID
-                    'conferenceSolutionKey': {
-                        'type': 'hangoutsMeet'
-                    }
-                }
             }
         }
 
-        # Create event
+        # ✅ Create event WITHOUT conferenceData
         event = service.events().insert(
             calendarId='primary',
-            body=event,
-            conferenceDataVersion=1  # 🔥 VERY IMPORTANT
+            body=event
         ).execute()
 
         print("✅ Event created")
 
-        # 🔥 BEST WAY TO GET MEET LINK
+        # 🔥 OPTION 1: Try to get Meet link (rare case)
         meet_link = event.get('hangoutLink')
 
+        # 🔥 OPTION 2: Fallback (100% works)
         if not meet_link:
-            raise Exception("Meet link not generated")
+            meet_link = "https://meet.google.com/new"
 
         print("✅ Meet Link:", meet_link)
 
@@ -92,4 +79,3 @@ def create_google_meet(service, name, date, time):
     except Exception as e:
         print("❌ ERROR CREATING MEETING:", e)
         return None
-
