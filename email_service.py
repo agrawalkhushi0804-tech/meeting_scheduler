@@ -1,86 +1,54 @@
-import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
-from datetime import datetime
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from datetime import datetime, timedelta
+
+# ✅ SCOPES
+SCOPES = ['https://www.googleapis.com/auth/calendar']
+
+# ✅ GET SERVICE
+def get_calendar_service():
+    credentials = service_account.Credentials.from_service_account_file(
+        'service_account.json',
+        scopes=SCOPES
+    )
+
+    service = build('calendar', 'v3', credentials=credentials)
+    return service
 
 
-def send_confirmation_email(receiver_email, name, date, time, meet_link):
+# ✅ CREATE GOOGLE MEET LINK
+def create_google_meet(service, name, date, time):
 
-    try:
-        # 🔹 Convert date → day
-        date_obj = datetime.strptime(date, "%Y-%m-%d")
-        day = date_obj.strftime("%A")   # Monday, Tuesday...
+    start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
+    end_time = start_time + timedelta(hours=1)
 
-        message = Mail(
-            from_email=('info.aksharpaaul@gmail.com', 'Akshar Paaul'),
-            to_emails=receiver_email,
-            subject='Meeting Confirmation - Akshar Paaul',
+    event = {
+        'summary': f'Meeting with {name}',
+        'start': {
+            'dateTime': start_time.isoformat(),
+            'timeZone': 'Asia/Kolkata',
+        },
+        'end': {
+            'dateTime': end_time.isoformat(),
+            'timeZone': 'Asia/Kolkata',
+        },
+        'conferenceData': {
+            'createRequest': {
+                'requestId': f"{name}-{date}-{time}",
+                'conferenceSolutionKey': {
+                    'type': 'hangoutsMeet'
+                }
+            }
+        }
+    }
 
-            html_content=f"""
-            <html>
-            <body style="font-family: Arial; background:#f4f6f8; padding:20px;">
+    event = service.events().insert(
+        calendarId='primary',
+        body=event,
+        conferenceDataVersion=1
+    ).execute()
 
-                <div style="max-width:600px; margin:auto; background:white; padding:25px; border-radius:10px;">
+    # ✅ Extract Google Meet link
+    meet_link = event['conferenceData']['entryPoints'][0]['uri']
 
-                    <!-- LOGO -->
-                    <div style="text-align:center;">
-                        <img src="https://meeting-scheduler-o5wq.onrender.com/static/logo.png" width="90">
-                    </div>
-
-                    <h2 style="color:#6A1B9A; text-align:center;">Meeting Confirmed</h2>
-
-                    <p>Dear <b>{name}</b>,</p>
-
-                    <p>Your meeting with <b>Akshar Paaul</b> has been successfully scheduled.</p>
-
-                    <table style="width:100%; margin-top:15px;">
-                        <tr>
-                            <td><b>Day:</b></td>
-                            <td>{day}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Date:</b></td>
-                            <td>{date}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Time:</b></td>
-                            <td>{time}</td>
-                        </tr>
-                        <tr>
-                            <td><b>Mode:</b></td>
-                            <td>Online (Google Meet)</td>
-                        </tr>
-                    </table>
-
-                    <!-- BUTTON -->
-                    <div style="text-align:center; margin:25px;">
-                        <a href="{meet_link}"
-                           style="background:#1E73BE; color:white; padding:12px 25px;
-                                  text-decoration:none; border-radius:6px; font-weight:bold;">
-                           Join Meeting
-                        </a>
-                    </div>
-
-                    <p>Please join the meeting on time.</p>
-
-                    <hr>
-
-                    <p style="font-size:12px; color:gray;">
-                        This is an automated email from Akshar Paaul NGO.
-                    </p>
-
-                </div>
-
-            </body>
-            </html>
-            """
-        )
-
-        api_key = os.environ.get("SENDGRID_API_KEY")
-        sg = SendGridAPIClient(api_key)
-        sg.send(message)
-
-        print("✅ Email sent successfully")
-
-    except Exception as e:
-        print("❌ Email Error:", e)
+    return meet_link
