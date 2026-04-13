@@ -1,6 +1,8 @@
 import os
 import json
 from datetime import datetime, timedelta
+import uuid
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
@@ -8,11 +10,10 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
 # =========================
-# GET SERVICE
+# GET GOOGLE CALENDAR SERVICE
 # =========================
 def get_calendar_service():
     try:
-        # 🔥 Load JSON from environment variable
         credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
         if not credentials_json:
@@ -34,18 +35,23 @@ def get_calendar_service():
 
 
 # =========================
-# CREATE GOOGLE MEET
+# CREATE GOOGLE MEET LINK
 # =========================
 def create_google_meet(service, name, date, time):
     try:
         if service is None:
-            return "Error: Calendar service not available"
+            raise Exception("Service not initialized")
 
+        print("=== CREATING GOOGLE MEET ===")
+
+        # Convert datetime
         start_time = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         end_time = start_time + timedelta(hours=1)
 
+        # Event body
         event = {
             'summary': f'Meeting with {name}',
+            'description': 'Scheduled via Meeting Scheduler',
             'start': {
                 'dateTime': start_time.isoformat(),
                 'timeZone': 'Asia/Kolkata',
@@ -56,7 +62,7 @@ def create_google_meet(service, name, date, time):
             },
             'conferenceData': {
                 'createRequest': {
-                    'requestId': f"{name}-{date}-{time}",
+                    'requestId': str(uuid.uuid4()),  # 🔥 unique ID
                     'conferenceSolutionKey': {
                         'type': 'hangoutsMeet'
                     }
@@ -64,25 +70,26 @@ def create_google_meet(service, name, date, time):
             }
         }
 
+        # Create event
         event = service.events().insert(
             calendarId='primary',
             body=event,
-            conferenceDataVersion=1
+            conferenceDataVersion=1  # 🔥 VERY IMPORTANT
         ).execute()
 
-        raw_link = event['conferenceData']['entryPoints'][0]['uri']
+        print("✅ Event created")
 
-        # 🔥 FIX REDIRECT ISSUE
-        if "google.com/url?q=" in raw_link:
-            import urllib.parse
-            meet_link = urllib.parse.parse_qs(
-                urllib.parse.urlparse(raw_link).query
-            )['q'][0]
-        else:
-            meet_link = raw_link
+        # 🔥 BEST WAY TO GET MEET LINK
+        meet_link = event.get('hangoutLink')
 
-        return meet_link.strip()
+        if not meet_link:
+            raise Exception("Meet link not generated")
+
+        print("✅ Meet Link:", meet_link)
+
+        return meet_link
 
     except Exception as e:
         print("❌ ERROR CREATING MEETING:", e)
-        return "Error creating meeting"
+        return None
+
